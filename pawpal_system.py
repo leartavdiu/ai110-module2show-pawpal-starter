@@ -3,62 +3,85 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Task:
-    title: str
-    duration_minutes: int
-    priority: str
-    category: str = "general"
+    """Represents one pet care activity."""
+    description: str
+    time: str
+    frequency: str
     completed: bool = False
 
     def mark_complete(self):
         """Mark this task as completed."""
-        pass
+        self.completed = True
+
+    def mark_incomplete(self):
+        """Mark this task as not completed."""
+        self.completed = False
 
 
 @dataclass
 class Pet:
+    """Stores pet details and the pet's tasks."""
     name: str
     species: str
     age: int
     tasks: list[Task] = field(default_factory=list)
 
     def add_task(self, task: Task):
-        """Add a care task for this pet."""
-        pass
+        """Add a task to this pet."""
+        self.tasks.append(task)
 
-    def remove_task(self, task_title: str):
-        """Remove a task by title."""
-        pass
+    def get_tasks(self):
+        """Return all tasks for this pet."""
+        return self.tasks
 
 
 @dataclass
 class Owner:
+    """Stores owner details and manages multiple pets."""
     name: str
-    available_minutes: int
-    preferences: list[str] = field(default_factory=list)
     pets: list[Pet] = field(default_factory=list)
 
     def add_pet(self, pet: Pet):
         """Add a pet to this owner."""
-        pass
+        self.pets.append(pet)
 
-    def add_preference(self, preference: str):
-        """Add an owner preference."""
-        pass
+    def get_all_tasks(self):
+        """Return all tasks from all of the owner's pets."""
+        all_tasks = []
+
+        for pet in self.pets:
+            for task in pet.get_tasks():
+                all_tasks.append((pet, task))
+
+        return all_tasks
 
 
-@dataclass
-class DailyPlan:
-    owner: Owner
-    pet: Pet
-    scheduled_tasks: list[Task] = field(default_factory=list)
+class Scheduler:
+    """Organizes and displays tasks across all pets."""
 
-    def generate_plan(self, tasks: list[Task]):
-        """
-        Generate a daily care plan based on task priority,
-        task duration, and owner availability.
-        """
-        pass
+    def __init__(self, owner: Owner):
+        """Create a scheduler for one owner."""
+        self.owner = owner
 
-    def explain_plan(self):
-        """Explain why tasks were included in the schedule."""
-        pass
+    def get_schedule(self):
+        """Get all pet tasks organized by time."""
+        tasks = self.owner.get_all_tasks()
+        return sorted(tasks, key=lambda item: item[1].time)
+
+    def print_schedule(self):
+        """Print today's schedule in a readable format."""
+        schedule = self.get_schedule()
+
+        print("Today's Schedule")
+        print("----------------")
+
+        if not schedule:
+            print("No tasks scheduled.")
+            return
+
+        for pet, task in schedule:
+            status = "Done" if task.completed else "Not done"
+            print(
+                f"{task.time} - {pet.name} ({pet.species}): "
+                f"{task.description} [{task.frequency}] - {status}"
+            )
