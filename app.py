@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 
 from pawpal_system import Owner, Pet, Task, Scheduler
@@ -9,14 +10,17 @@ st.title("🐾 PawPal+")
 
 st.markdown(
     """
-PawPal+ helps a pet owner track care tasks, organize them by time,
-detect schedule conflicts, and handle recurring daily or weekly tasks.
+PawPal+ helps a pet owner track care tasks, organize them by priority and time,
+detect schedule conflicts, suggest open time slots, and save data between app runs.
 """
 )
 
-# Create owner once and keep it in Streamlit memory
+# Create or load owner once and keep it in Streamlit memory
 if "owner" not in st.session_state:
-    st.session_state.owner = Owner("Jordan")
+    if os.path.exists("data.json"):
+        st.session_state.owner = Owner.load_from_json("data.json")
+    else:
+        st.session_state.owner = Owner("Jordan")
 
 
 st.divider()
@@ -27,6 +31,7 @@ owner_name = st.text_input("Owner name", value=st.session_state.owner.name)
 
 if st.button("Save owner"):
     st.session_state.owner.name = owner_name
+    st.session_state.owner.save_to_json("data.json")
     st.success(f"Owner saved: {st.session_state.owner.name}")
 
 
@@ -45,6 +50,7 @@ with st.form("add_pet_form"):
         if pet_name.strip():
             new_pet = Pet(pet_name.strip(), species, int(age))
             st.session_state.owner.add_pet(new_pet)
+            st.session_state.owner.save_to_json("data.json")
             st.success(f"Added pet: {pet_name}")
         else:
             st.error("Please enter a pet name.")
@@ -81,6 +87,7 @@ if st.session_state.owner.pets:
         task_description = st.text_input("Task description", value="Morning walk")
         task_time = st.text_input("Time", value="08:00")
         frequency = st.selectbox("Frequency", ["daily", "weekly", "as needed"])
+        priority = st.selectbox("Priority", ["High", "Medium", "Low"], index=1)
 
         submitted_task = st.form_submit_button("Add task")
 
@@ -92,8 +99,14 @@ if st.session_state.owner.pets:
                     selected_pet = pet
 
             if selected_pet and task_description.strip():
-                new_task = Task(task_description.strip(), task_time.strip(), frequency)
+                new_task = Task(
+                    task_description.strip(),
+                    task_time.strip(),
+                    frequency,
+                    priority,
+                )
                 selected_pet.add_task(new_task)
+                st.session_state.owner.save_to_json("data.json")
                 st.success(f"Added task for {selected_pet.name}: {task_description}")
             else:
                 st.error("Please enter a task description.")
@@ -103,7 +116,7 @@ else:
 
 st.divider()
 
-st.subheader("Today's Schedule")
+st.subheader("Today's Priority Schedule")
 
 scheduler = Scheduler(st.session_state.owner)
 schedule = scheduler.get_schedule()
@@ -112,14 +125,24 @@ if schedule:
     schedule_rows = []
 
     for pet, task in schedule:
+        status_icon = "✅ Done" if task.completed else "⏳ Not done"
+
+        if task.priority == "High":
+            priority_label = "🔴 High"
+        elif task.priority == "Medium":
+            priority_label = "🟡 Medium"
+        else:
+            priority_label = "🟢 Low"
+
         schedule_rows.append(
             {
                 "Time": task.time,
                 "Pet": pet.name,
                 "Task": task.description,
                 "Frequency": task.frequency,
+                "Priority": priority_label,
                 "Due Date": str(task.due_date),
-                "Status": "Done" if task.completed else "Not done",
+                "Status": status_icon,
             }
         )
 
@@ -139,6 +162,20 @@ if conflicts:
         st.warning(conflict)
 else:
     st.success("No schedule conflicts found.")
+
+
+st.divider()
+
+st.subheader("Next Available Slot")
+
+start_time = st.text_input("Find next open slot after", value="08:00")
+
+if st.button("Find next available slot"):
+    try:
+        next_slot = scheduler.next_available_slot(start_time)
+        st.success(f"Next available slot after {start_time}: {next_slot}")
+    except ValueError:
+        st.error("Please enter time in HH:MM format, like 08:00.")
 
 
 st.divider()
@@ -167,6 +204,7 @@ if filtered_tasks:
                 "Pet": pet.name,
                 "Task": task.description,
                 "Frequency": task.frequency,
+                "Priority": task.priority,
                 "Due Date": str(task.due_date),
                 "Status": "Done" if task.completed else "Not done",
             }
@@ -201,6 +239,7 @@ if schedule:
             selected_pet, selected_task = incomplete_tasks[selected_index]
 
             scheduler.mark_task_complete(selected_pet.name, selected_task.description)
+            st.session_state.owner.save_to_json("data.json")
 
             st.success(
                 f"Completed {selected_task.description}. "

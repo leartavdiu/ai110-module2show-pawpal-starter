@@ -17,10 +17,11 @@ Your job is to design the system first (UML), then implement the logic in Python
 Your final app should:
 
 * Let a user enter basic owner + pet info
-* Let a user add/edit tasks (duration + priority at minimum)
+* Let a user add/edit tasks with frequency and priority
 * Generate a daily schedule/plan based on constraints and priorities
 * Display the plan clearly and explain important scheduling behavior
 * Include tests for the most important scheduling behaviors
+* Include optional extensions such as persistence, priority scheduling, conflict warnings, and next available slot suggestions
 
 ## Getting started
 
@@ -96,7 +97,23 @@ Mochi: Morning walk at 08:00
 
 Conflict Warnings Before Completing Task
 ---------------------------------------
-Conflict at 08:00 on 2026-06-23: Mochi has 'Morning walk' and Luna has 'Morning medicine'.
+Conflict at 08:00 on 2026-06-23: Mochi has 'Morning walk' and Luna has 'Morning medicine'. Suggested next available slot: 08:30.
+
+Next Available Slot After 08:00
+-------------------------------
+08:30
+
+Saving data to data.json...
+
+Loading data from data.json...
+
+Loaded Schedule
+---------------
+08:00 - Luna: Morning medicine priority High
+09:00 - Mochi: Breakfast feeding priority High
+08:00 - Mochi: Morning walk priority Medium
+10:30 - Luna: Clean litter box priority Low
+18:00 - Luna: Evening play time priority Low
 
 Completing Morning walk...
 
@@ -131,6 +148,8 @@ The tests verify the most important backend behaviors:
 * Detecting scheduling conflicts
 * Handling a pet with no tasks
 * Sorting tasks by priority
+* Finding the next available time slot
+* Saving and loading data with JSON persistence
 
 Sample successful test output:
 
@@ -139,11 +158,11 @@ Sample successful test output:
 platform darwin -- Python 3.13.9, pytest-8.4.2, pluggy-1.5.0
 rootdir: /Users/leartavdiu/Downloads/ai110-module2show-pawpal-starter-main
 plugins: anyio-4.10.0
-collected 7 items                                                                                                                                            
+collected 9 items                                                                                                                                            
 
-tests/test_pawpal.py .......                                                                                                                           [100%]
+tests/test_pawpal.py .........                                                                                                                         [100%]
 
-===================================================================== 7 passed in 0.02s =====================================================================
+===================================================================== 9 passed in 0.02s =====================================================================
 ```
 
 Confidence Level: ⭐⭐⭐⭐☆
@@ -152,17 +171,64 @@ I am mostly confident that the system works for the main scheduling behaviors be
 
 ## 📐 Smarter Scheduling
 
-| Feature           | Method(s)                                                            | Notes                                                                        |
-| ----------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Task sorting      | `Scheduler.sort_by_time()`                                           | Sorts tasks by their `time` value in HH:MM format.                           |
-| Priority sorting  | `Scheduler.sort_by_priority()`                                       | Sorts tasks by priority first, then by time.                                 |
-| Filtering         | `Scheduler.filter_tasks()`                                           | Filters tasks by pet name or completion status.                              |
-| Conflict handling | `Scheduler.detect_conflicts()`                                       | Checks for exact time matches and returns warning messages.                  |
-| Recurring tasks   | `Task.create_next_occurrence()` and `Scheduler.mark_task_complete()` | Creates a new daily or weekly task when a recurring task is marked complete. |
+| Feature             | Method(s)                                                            | Notes                                                                        |
+| ------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Task sorting        | `Scheduler.sort_by_time()`                                           | Sorts tasks by their `time` value in HH:MM format.                           |
+| Priority sorting    | `Scheduler.sort_by_priority()`                                       | Sorts tasks by priority first, then by time.                                 |
+| Filtering           | `Scheduler.filter_tasks()`                                           | Filters tasks by pet name or completion status.                              |
+| Conflict handling   | `Scheduler.detect_conflicts()`                                       | Checks for exact time matches and returns warning messages.                  |
+| Next available slot | `Scheduler.next_available_slot()`                                    | Suggests the next open time slot after a conflict.                           |
+| Recurring tasks     | `Task.create_next_occurrence()` and `Scheduler.mark_task_complete()` | Creates a new daily or weekly task when a recurring task is marked complete. |
+| Data persistence    | `Owner.save_to_json()` and `Owner.load_from_json()`                  | Saves and loads owner, pet, and task data using `data.json`.                 |
 
-## Optional Extension: Priority-Based Scheduling
+## Optional Extensions
 
-I added priority-based scheduling as an optional extension. Each task now has a priority level: High, Medium, or Low. The Scheduler uses `Scheduler.sort_by_priority()` to organize tasks by priority first and time second. This means important tasks, like medicine or feeding, appear before lower priority tasks, even if a lower priority task happens earlier in the day.
+### Challenge 1: Advanced Algorithmic Capability
+
+I added a next available slot algorithm. When two incomplete tasks are scheduled at the same time on the same due date, the Scheduler can suggest the next open time slot.
+
+Method added:
+
+* `Scheduler.next_available_slot()`
+
+Example:
+
+```text
+Conflict at 08:00 on 2026-06-23: Mochi has 'Morning walk' and Luna has 'Morning medicine'. Suggested next available slot: 08:30.
+```
+
+### Challenge 2: Data Persistence
+
+I added data persistence so PawPal+ can remember pets and tasks between app runs. The system saves owner, pet, and task data to a `data.json` file using custom dictionary conversion methods.
+
+Methods added:
+
+* `Task.to_dict()`
+* `Task.from_dict()`
+* `Pet.to_dict()`
+* `Pet.from_dict()`
+* `Owner.to_dict()`
+* `Owner.from_dict()`
+* `Owner.save_to_json()`
+* `Owner.load_from_json()`
+
+Persistence workflow:
+
+1. When the app starts, it checks if `data.json` exists.
+2. If the file exists, the app loads the saved owner, pets, and tasks.
+3. If the file does not exist, the app creates a new default owner.
+4. When the user adds a pet, adds a task, saves the owner, or marks a task complete, the app saves the updated data to `data.json`.
+
+Files modified:
+
+* `pawpal_system.py`
+* `app.py`
+* `tests/test_pawpal.py`
+* `README.md`
+
+### Challenge 3: Advanced Priority Scheduling
+
+I added priority-based scheduling. Each task now has a priority level: High, Medium, or Low. The Scheduler uses `Scheduler.sort_by_priority()` to organize tasks by priority first and time second. This means important tasks, like medicine or feeding, appear before lower priority tasks, even if a lower priority task happens earlier in the day.
 
 Methods added or updated:
 
@@ -182,6 +248,22 @@ Today's Priority Schedule
 18:00 - Luna (cat): Evening play time [daily] priority Low due 2026-06-23 - Not done
 ```
 
+### Challenge 4: Professional UI and Output Formatting
+
+I improved the Streamlit UI with clearer tables, emoji-based priority labels, completion status indicators, success messages, warning messages, and a next available slot tool.
+
+Formatting features added:
+
+* `st.table()` for structured pet and schedule displays
+* `st.warning()` for conflict warnings
+* `st.success()` for saved data, completed tasks, and no-conflict messages
+* Priority labels like 🔴 High, 🟡 Medium, and 🟢 Low
+* Status labels like ✅ Done and ⏳ Not done
+
+### Challenge 5: Multi-Model Prompt Comparison
+
+I compared AI suggestions for the scheduling logic. I used ChatGPT for the main implementation plan and GitHub Copilot in VS Code for an alternate idea on next available slot logic. I kept the final design simple by using a readable loop that checks 30-minute time intervals.
+
 ## 📸 Demo Walkthrough
 
 1. The user opens the Streamlit app and enters the owner name.
@@ -189,11 +271,13 @@ Today's Priority Schedule
 3. The user adds care tasks for each pet, including the task description, time, frequency, and priority.
 4. The app displays today’s schedule using the Scheduler class.
 5. Tasks are organized by priority first and then by time.
-6. If two incomplete tasks are scheduled at the same time on the same due date, the app shows a warning message.
-7. The user can filter tasks by completion status.
-8. The user can mark a task complete.
-9. If the completed task is daily or weekly, the system creates the next recurring task automatically.
-10. The user can also run `python main.py` to see the same scheduling logic demonstrated in the terminal.
+6. If two incomplete tasks are scheduled at the same time on the same due date, the app shows a warning message with a suggested next available slot.
+7. The user can search for the next available slot manually by entering a start time.
+8. The user can filter tasks by completion status.
+9. The user can mark a task complete.
+10. If the completed task is daily or weekly, the system creates the next recurring task automatically.
+11. The app saves owner, pet, and task data to `data.json`, so the information can persist between runs.
+12. The user can also run `python main.py` to see the same scheduling logic demonstrated in the terminal.
 
 **Screenshot or video** *(optional)*: A screenshot or video can be added here to show the Streamlit app running.
 
@@ -205,6 +289,7 @@ Today's Priority Schedule
 | `pawpal_system.py`       | Backend classes and scheduling logic                         |
 | `main.py`                | CLI demo script                                              |
 | `tests/test_pawpal.py`   | Automated pytest test suite                                  |
+| `data.json`              | Saved owner, pet, and task data                              |
 | `diagrams/uml_draft.mmd` | Initial UML diagram                                          |
 | `diagrams/uml_final.mmd` | Final UML diagram                                            |
 | `reflection.md`          | Project reflection                                           |

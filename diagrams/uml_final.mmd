@@ -3,11 +3,14 @@ classDiagram
         +str description
         +str time
         +str frequency
+        +str priority
         +bool completed
         +date due_date
         +mark_complete()
         +mark_incomplete()
         +create_next_occurrence()
+        +to_dict()
+        +from_dict(data)
     }
 
     class Pet {
@@ -17,6 +20,8 @@ classDiagram
         +list tasks
         +add_task(task)
         +get_tasks()
+        +to_dict()
+        +from_dict(data)
     }
 
     class Owner {
@@ -24,19 +29,25 @@ classDiagram
         +list pets
         +add_pet(pet)
         +get_all_tasks()
+        +to_dict()
+        +from_dict(data)
+        +save_to_json(filename)
+        +load_from_json(filename)
     }
 
     class Scheduler {
         +Owner owner
         +sort_by_time(tasks)
+        +sort_by_priority(tasks)
         +filter_tasks(pet_name, completed)
         +get_schedule()
         +mark_task_complete(pet_name, task_description)
         +detect_conflicts()
+        +next_available_slot(start_time, due_date, interval_minutes)
         +print_schedule()
     }
 
     Owner "1" --> "*" Pet : owns
     Pet "1" --> "*" Task : has
-    Scheduler "1" --> "1" Owner : organizes tasks for
-    Scheduler "1" --> "*" Task : sorts filters and checks
+    Scheduler "1" --> "1" Owner : manages
+    Scheduler "1" --> "*" Task : sorts filters checks
