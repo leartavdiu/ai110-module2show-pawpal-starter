@@ -33,7 +33,7 @@ My design changed during implementation because I replaced the DailyPlan class w
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
 - How did you decide which constraints mattered most?
 
-My scheduler mainly considers task time, completion status, pet name, frequency, and basic conflicts. Time matters because the schedule should appear in the correct order for the day. Completion status matters because the app needs to know which tasks are already done and which tasks still need attention. Pet name matters because an owner may have multiple pets, so the scheduler needs to filter tasks for a specific pet. Frequency matters because daily and weekly tasks should continue after they are completed. I decided time and completion status mattered most because the main goal of the app is to help the owner clearly see what needs to be done and when.
+My scheduler considers task time, priority, completion status, pet name, frequency, and basic conflicts. Time matters because tasks need to be organized into a clear schedule. Priority matters because important tasks, such as medicine or feeding, should appear before lower priority tasks. Completion status matters because the app needs to know which tasks are already done and which tasks still need attention. Pet name matters because an owner may have multiple pets, so the scheduler needs to filter tasks for a specific pet. Frequency matters because daily and weekly tasks should continue after they are completed. I decided priority and time mattered most because the main goal of the app is to help the owner see the most important tasks first while still keeping the schedule organized.
 
 **b. Tradeoffs**
 
